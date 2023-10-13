@@ -81,12 +81,12 @@ public class Tests
             ForbiddenSequences = new[] { "aa", "bb", "cc" }
         };
 
-        var needFalse = true;
+        bool needFalse;
         do
         {
             //ehhh
             var pass = PasswordGenerator.Generate(cfgGenerator);
-            needFalse = PasswordGenerator.Validate(pass.ToString(), cfgValidator);
+            needFalse = PasswordGenerator.Validate(pass, cfgValidator);
         } while (needFalse);
 
         Assert.False(needFalse);
@@ -109,7 +109,7 @@ public class Tests
         for (int i = 0; i < 100; i++)
         {
             var pass = PasswordGenerator.Generate(cfgGenerator);
-            Assert.True(PasswordGenerator.Validate(pass.ToString(), cfgGenerator));
+            Assert.True(PasswordGenerator.Validate(pass, cfgGenerator));
         }
     }
 
@@ -252,8 +252,6 @@ public class Tests
     public void StringTest_1()
     {
         var pass = PasswordGenerator.Generate(requireLowerCase: true, requireSpecial: true, requireUpperCase: true, requireNumber: true, maxLength: 4, minLength: 4);
-        string toast = pass;
-
         Assert.That(pass.Length == 4);
     }
 }
