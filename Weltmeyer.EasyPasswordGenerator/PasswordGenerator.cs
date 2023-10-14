@@ -1,4 +1,6 @@
-﻿namespace Weltmeyer.EasyPasswordGenerator;
+﻿using System.Security.Cryptography;
+
+namespace Weltmeyer.EasyPasswordGenerator;
 
 public class PasswordGenerator
 {
@@ -8,6 +10,11 @@ public class PasswordGenerator
     static readonly char[] Numbers = Enumerable.Range(48, 57 - 48).Select(x => (char)x).ToArray();
     static readonly char[] Special = Enumerable.Range(33, 47 - 33).Select(x => (char)x).ToArray();
 
+    private static int GetNextRnd(int minInclusive, int maxInclusive)
+    {//RandomNumberGenerator
+        return RandomNumberGenerator.GetInt32(minInclusive, maxInclusive + 1);
+        return Random.Shared.Next(minInclusive, maxInclusive + 1);
+    }
 
     private enum CharType
     {
@@ -205,7 +212,7 @@ public class PasswordGenerator
         var forceAddNumber = requireNumber;
         var forceAddSpecial = requireSpecial;
 
-        var randomLength = Random.Shared.Next(minLength, maxLength + 1);
+        var randomLength = GetNextRnd(minLength, maxLength);
         var remainingRequireLength = requireLength;
         Span<char> passwordChars = new char[randomLength];
 
@@ -222,7 +229,7 @@ public class PasswordGenerator
 
         for (int i = 0; i < randomLength; i++)
         {
-            var nextType = allowedCharTypes[Random.Shared.Next(0, allowedCharTypes.Count)];
+            var nextType = allowedCharTypes[GetNextRnd(0, allowedCharTypes.Count-1)];
             if (remainingRequireLength >= randomLength - i)
             {
                 if (forceAddLower)
@@ -335,7 +342,7 @@ public class PasswordGenerator
         char result;
         do
         {
-            result = source[Random.Shared.Next(0, source.Length)];
+            result = source[GetNextRnd(0, source.Length-1)];
         } while (disableConfusableCharacters && Array.IndexOf(ConfusableCharacters, result) >= 0);
 
 
