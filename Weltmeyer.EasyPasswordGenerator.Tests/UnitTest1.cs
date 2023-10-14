@@ -25,7 +25,7 @@ public class Tests
         Assert.GreaterOrEqual(str.Length, 5);
         Assert.LessOrEqual(str.Length, 10);
 
-        Assert.True(PasswordGenerator.Validate(str, cfg));
+        Assert.True(PasswordGenerator.Validate(str, cfg).Success);
     }
 
     [Test]
@@ -34,10 +34,10 @@ public class Tests
         var cfg = new PasswordConfiguration { MinLength = 50, MaxLength = 60 };
         var str = PasswordGenerator.Generate(cfg);
 
-        Assert.True(PasswordGenerator.Validate(str, cfg));
+        Assert.True(PasswordGenerator.Validate(str, cfg).Success);
         cfg.MaxLength = 10;
         cfg.MinLength = 8;
-        Assert.False(PasswordGenerator.Validate(str, cfg));
+        Assert.False(PasswordGenerator.Validate(str, cfg).Success);
     }
 
     [Test]
@@ -46,11 +46,11 @@ public class Tests
         var cfg = new PasswordConfiguration { MinLength = 10, MaxLength = 20, AllowSpecial = false };
         var str = PasswordGenerator.Generate(cfg);
 
-        Assert.True(PasswordGenerator.Validate(str, cfg));
+        Assert.True(PasswordGenerator.Validate(str, cfg).Success);
         cfg.AllowSpecial = true;
         cfg.RequireSpecial = true;
-        Assert.False(PasswordGenerator.Validate(str, cfg));
-        Assert.False(PasswordGenerator.Validate(str, allowSpecial: true, requireSpecial: true));
+        Assert.False(PasswordGenerator.Validate(str, cfg).Success);
+        Assert.False(PasswordGenerator.Validate(str, allowSpecial: true, requireSpecial: true).Success);
     }
 
 
@@ -60,9 +60,9 @@ public class Tests
         var cfg = new PasswordConfiguration { MinLength = 10, MaxLength = 20 };
         var str = PasswordGenerator.Generate(cfg);
 
-        Assert.True(PasswordGenerator.Validate(str, cfg));
+        Assert.True(PasswordGenerator.Validate(str, cfg).Success);
         cfg.MinLength = 30;
-        Assert.False(PasswordGenerator.Validate(str, cfg));
+        Assert.False(PasswordGenerator.Validate(str, cfg).Success);
     }
 
     [Test]
@@ -86,7 +86,7 @@ public class Tests
         {
             //ehhh
             var pass = PasswordGenerator.Generate(cfgGenerator);
-            needFalse = PasswordGenerator.Validate(pass, cfgValidator);
+            needFalse = PasswordGenerator.Validate(pass, cfgValidator).Success;
         } while (needFalse);
 
         Assert.False(needFalse);
@@ -109,7 +109,7 @@ public class Tests
         for (int i = 0; i < 100; i++)
         {
             var pass = PasswordGenerator.Generate(cfgGenerator);
-            Assert.True(PasswordGenerator.Validate(pass, cfgGenerator));
+            Assert.True(PasswordGenerator.Validate(pass, cfgGenerator).Success);
         }
     }
 
@@ -117,11 +117,12 @@ public class Tests
     public void TestFail_MissingNumber()
     {
         var str = "abcdefgh";
-
-        Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
+        var validationResult = PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             RequireNumber = true,
-        }));
+        });
+        Assert.False(validationResult.Success);
+        Assert.Contains(PasswordValidationResult.EnmValidationError.NumbersRequired, validationResult.ValidationErrors);
     }
 
     [Test]
@@ -132,7 +133,7 @@ public class Tests
         Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             RequireLowerCase = true,
-        }));
+        }).Success);
     }
 
     [Test]
@@ -143,7 +144,7 @@ public class Tests
         Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             RequireUpperCase = true,
-        }));
+        }).Success);
     }
 
     [Test]
@@ -154,7 +155,7 @@ public class Tests
         Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             RequireSpecial = true,
-        }));
+        }).Success);
     }
 
     [Test]
@@ -165,7 +166,7 @@ public class Tests
         Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             MaxConsecutiveSameCharacter = 2
-        }));
+        }).Success);
     }
 
     [Test]
@@ -189,7 +190,7 @@ public class Tests
         Assert.True(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             MaxConsecutiveSameCharacter = 3
-        }));
+        }).Success);
     }
 
     [Test]
@@ -200,7 +201,7 @@ public class Tests
         Assert.True(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             DisableConfusableCharacters = false
-        }));
+        }).Success);
     }
 
     [Test]
@@ -211,7 +212,7 @@ public class Tests
         Assert.False(PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
         {
             DisableConfusableCharacters = true
-        }));
+        }).Success);
     }
 
     [Test]

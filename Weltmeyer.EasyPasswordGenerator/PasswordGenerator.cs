@@ -11,7 +11,8 @@ public class PasswordGenerator
     static readonly char[] Special = Enumerable.Range(33, 47 - 33).Select(x => (char)x).ToArray();
 
     private static int GetNextRnd(int minInclusive, int maxInclusive)
-    {//RandomNumberGenerator
+    {
+        //RandomNumberGenerator
         return RandomNumberGenerator.GetInt32(minInclusive, maxInclusive + 1);
         return Random.Shared.Next(minInclusive, maxInclusive + 1);
     }
@@ -35,10 +36,10 @@ public class PasswordGenerator
     /// <param name="password"></param>
     /// <param name="configuration"></param>
     /// <returns></returns>
-    public static bool Validate(string password, PasswordConfiguration configuration) =>
+    public static PasswordValidationResult Validate(string password, PasswordConfiguration configuration) =>
         Validate(password.ToCharArray(), configuration);
 
-    public static bool Validate(Span<char> password, PasswordConfiguration configuration) => Validate(password,
+    public static PasswordValidationResult Validate(Span<char> password, PasswordConfiguration configuration) => Validate(password,
         minLength: configuration.MinLength,
         maxLength: configuration.MaxLength,
         allowLowerCase: configuration.AllowLowerCase,
@@ -54,7 +55,7 @@ public class PasswordGenerator
         forbiddenSequences: configuration.ForbiddenSequences
     );
 
-    public static bool Validate(string password, int minLength = 8, int maxLength = 99,
+    public static PasswordValidationResult Validate(string password, int minLength = 8, int maxLength = 99,
         bool allowLowerCase = true, bool requireLowerCase = false,
         bool allowUpperCase = true, bool requireUpperCase = false,
         bool allowNumbers = true, bool requireNumber = false,
@@ -71,7 +72,7 @@ public class PasswordGenerator
         forbiddenSequences
     );
 
-    public static bool Validate(ReadOnlySpan<char> password, int minLength = 8, int maxLength = 99,
+    public static PasswordValidationResult Validate(ReadOnlySpan<char> password, int minLength = 8, int maxLength = 99,
         bool allowLowerCase = true, bool requireLowerCase = false,
         bool allowUpperCase = true, bool requireUpperCase = false,
         bool allowNumbers = true, bool requireNumber = false,
@@ -80,36 +81,61 @@ public class PasswordGenerator
         bool disableConfusableCharacters = true,
         string[]? forbiddenSequences = null)
     {
+        var result = new PasswordValidationResult();
+
+
         if (password.Length < minLength)
-            return false;
+            result.ValidationErrors.Add(PasswordValidationResult.EnmValidationError.TooShort);
         if (password.Length > maxLength)
-            return false;
+            result.ValidationErrors.Add(PasswordValidationResult.EnmValidationError.TooLong);
 
+        var valLower = ValidateRequirement(password, LowerCase, allowLowerCase, requireLowerCase);
+        if (valLower is not null)
+            result.ValidationErrors.Add(valLower.Value
+                ? PasswordValidationResult.EnmValidationError.LowerCaseRequired
+                : PasswordValidationResult.EnmValidationError.LowerCaseNotAllowed);
+        
+        var valUpper = ValidateRequirement(password, UpperCase, allowUpperCase, requireUpperCase);
+        if (valUpper is not null)
+            result.ValidationErrors.Add(valUpper.Value
+                ? PasswordValidationResult.EnmValidationError.UpperCaseRequired
+                : PasswordValidationResult.EnmValidationError.UpperCaseNotAllowed);
+        
+        
+        var valNumber = ValidateRequirement(password, Numbers, allowNumbers, requireNumber);
+        if (valNumber is not null)
+            result.ValidationErrors.Add(valNumber.Value
+                ? PasswordValidationResult.EnmValidationError.NumbersRequired
+                : PasswordValidationResult.EnmValidationError.NumbersNotAllowed);
+        
+        
+        var valSpecial = ValidateRequirement(password, Special, allowSpecial, requireSpecial);
+        if (valSpecial is not null)
+            result.ValidationErrors.Add(valSpecial.Value
+                ? PasswordValidationResult.EnmValidationError.SpecialCharsRequired
+                : PasswordValidationResult.EnmValidationError.SpecialCharsNotAllowed);
 
-        if (!ValidateRequirement(password, LowerCase, allowLowerCase, requireLowerCase))
-            return false;
-        if (!ValidateRequirement(password, UpperCase, allowUpperCase, requireUpperCase))
-            return false;
-        if (!ValidateRequirement(password, Numbers, allowNumbers, requireNumber))
-            return false;
-        if (!ValidateRequirement(password, Special, allowSpecial, requireSpecial))
-            return false;
 
 
         if (maxConsecutiveSameCharacter <= password.Length && HasConsecutiveChars(password, maxConsecutiveSameCharacter + 1))
-            return false;
+            result.ValidationErrors.Add(PasswordValidationResult.EnmValidationError.MaxConsecutiveSameCharacter);
 
-        if (!ValidateRequirement(password, ConfusableCharacters, !disableConfusableCharacters, false))
-            return false;
+        var valConfusable = ValidateRequirement(password, ConfusableCharacters, !disableConfusableCharacters, false);
+        if (valConfusable is not null)
+            result.ValidationErrors.Add(PasswordValidationResult.EnmValidationError.ContainsConfusableCharacters);
+        
+        
+        
+        
         if (forbiddenSequences is not null)
         {
             var strPw = new string(password);
             var matches = forbiddenSequences.Any(seq => strPw.Contains(seq));
             if (matches)
-                return false;
+                result.ValidationErrors.Add(PasswordValidationResult.EnmValidationError.ContainsForbiddenSequence);
         }
 
-        return true;
+        return result;
     }
 
 
@@ -137,16 +163,26 @@ public class PasswordGenerator
         return false;
     }
 
-    private static bool ValidateRequirement(ReadOnlySpan<char> haystack, Span<char> needles, bool allowed, bool required)
+    /// <summary>
+    /// return null if all is okay
+    /// return true if required but missing
+    /// return false if used but not allowed
+    /// </summary>
+    /// <param name="haystack"></param>
+    /// <param name="needles"></param>
+    /// <param name="allowed"></param>
+    /// <param name="required"></param>
+    /// <returns></returns>
+    private static bool? ValidateRequirement(ReadOnlySpan<char> haystack, Span<char> needles, bool allowed, bool required)
     {
         if (allowed && !required)
-            return true;
+            return null;
         var exists = haystack.IndexOfAny(needles) >= 0;
         if (exists && !allowed)
             return false;
         if (!exists && required)
-            return false;
-        return true;
+            return true;
+        return null;
     }
 
     public static string Generate(PasswordConfiguration configuration) => Generate(
@@ -229,7 +265,7 @@ public class PasswordGenerator
 
         for (int i = 0; i < randomLength; i++)
         {
-            var nextType = allowedCharTypes[GetNextRnd(0, allowedCharTypes.Count-1)];
+            var nextType = allowedCharTypes[GetNextRnd(0, allowedCharTypes.Count - 1)];
             if (remainingRequireLength >= randomLength - i)
             {
                 if (forceAddLower)
@@ -342,7 +378,7 @@ public class PasswordGenerator
         char result;
         do
         {
-            result = source[GetNextRnd(0, source.Length-1)];
+            result = source[GetNextRnd(0, source.Length - 1)];
         } while (disableConfusableCharacters && Array.IndexOf(ConfusableCharacters, result) >= 0);
 
 
