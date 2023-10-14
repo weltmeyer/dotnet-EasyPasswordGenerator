@@ -9,20 +9,25 @@ public class PasswordGenerator
     static readonly char[] Special = Enumerable.Range(33, 47 - 33).Select(x => (char)x).ToArray();
 
 
-   private enum CharType
+    private enum CharType
     {
         LowerCaseId = 1,
         UpperCaseId = 2,
         NumbersId = 3,
-        SpecialId=4
+        SpecialId = 4
     }
-    
+
     /*private const int LowerCaseId = 1;
     private const int UpperCaseId = 2;
     private const int NumbersId = 3;
     private const int SpecialId = 4;*/
 
-
+    /// <summary>
+    /// Validates password requirements against the given configuration
+    /// </summary>
+    /// <param name="password"></param>
+    /// <param name="configuration"></param>
+    /// <returns></returns>
     public static bool Validate(string password, PasswordConfiguration configuration) =>
         Validate(password.ToCharArray(), configuration);
 
@@ -58,7 +63,7 @@ public class PasswordGenerator
         maxConsecutiveSameCharacter, disableConfusableCharacters,
         forbiddenSequences
     );
-    
+
     public static bool Validate(ReadOnlySpan<char> password, int minLength = 8, int maxLength = 99,
         bool allowLowerCase = true, bool requireLowerCase = false,
         bool allowUpperCase = true, bool requireUpperCase = false,
@@ -169,9 +174,8 @@ public class PasswordGenerator
             minLength = 1;
         if (maxLength < 1)
             throw new ArgumentException("length<1 dont make sense...");
-        
-        
-        
+
+
         var requireLength =
             (requireLowerCase ? 1 : 0) +
             (requireUpperCase ? 1 : 0) +
