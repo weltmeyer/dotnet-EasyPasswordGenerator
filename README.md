@@ -17,3 +17,9 @@ Easy generation and validation of passwords with one ore more of the following r
  - ForbiddenSequences
    -  e.g. dont allow username in password
  
+# usage
+install via nuget: Weltmeyer.EasyPasswordGenerator 
+
+dotnet add package Weltmeyer.EasyPasswordGenerator
+
+https://www.nuget.org/packages/Weltmeyer.EasyPasswordGenerator
