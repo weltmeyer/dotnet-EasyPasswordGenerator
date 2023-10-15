@@ -1,4 +1,4 @@
-﻿using Weltmeyer.EasyPasswordGenerator;
+﻿//using Weltmeyer.EasyPasswordGenerator;
 using Weltmeyer.EasyPasswordGenerator.Bench;
 
 BenchmarkDotNet.Running.BenchmarkRunner.Run<Benchmarks>();
