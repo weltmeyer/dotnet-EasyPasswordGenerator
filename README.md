@@ -42,3 +42,19 @@ var pass = PasswordGenerator.Generate(minLength: 10, maxLength: 15) //generates 
         };
  var pass = PasswordGenerator.Generate(cfgGenerator);
  ```
+## Validate password requirements:
+```c#
+    [Test]
+    public void TestFail_MissingNumber()
+    {
+        var str = "abcdefgh";
+        var validationResult = PasswordGenerator.Validate(str.ToCharArray(), new PasswordConfiguration
+        {
+            RequireNumber = true,
+        });
+        Assert.False(validationResult.Success);
+        Assert.Contains(PasswordValidationResult.EnmValidationError.NumbersRequired, validationResult.ValidationErrors);
+    }
+ ```
+
+You can find more examples in the unit-tests
