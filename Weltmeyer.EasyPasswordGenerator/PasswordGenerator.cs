@@ -14,7 +14,7 @@ public class PasswordGenerator
     {
         //RandomNumberGenerator
         return RandomNumberGenerator.GetInt32(minInclusive, maxInclusive + 1);
-        return Random.Shared.Next(minInclusive, maxInclusive + 1);
+        //return Random.Shared.Next(minInclusive, maxInclusive + 1);
     }
 
     private enum CharType
@@ -211,7 +211,7 @@ public class PasswordGenerator
         int maxConsecutiveSameCharacter = 2,
         bool disableConfusableCharacters = true,
         string[]? forbiddenSequences = null
-    )
+        )
     {
         if (minLength < 1)
             minLength = 1;
